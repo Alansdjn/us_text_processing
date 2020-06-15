@@ -7,9 +7,9 @@ import sys, re
 #------------------------------
 
 # testRE = re.compile('(logic|sicstus)', re.I)
-html_open_tag_re = re.compile('(<[^/](.*?)>)', re.I)
-html_close_tag_re = re.compile('(</(.*?)>)', re.I)
-html_open_tag_param_re = re.compile(r'(\b[A-Za-z]+=.*?)*', re.I)
+html_tags_re = re.compile(r'<([/]?)([A-Za-z0-9]+)[ ]*(.*?)>', re.I)
+pair_tags_re = re.compile(r'<([A-Za-z0-9]+).*?>(.*?)</\1>', re.I)
+url_re = re.compile(r'<a href=(["\']?)(.*?)\1*?>', re.I)
 #------------------------------
 
 with open('RGX_DATA.html') as infs: 
@@ -19,27 +19,53 @@ with open('RGX_DATA.html') as infs:
         if line.strip() == '':
             continue
         print('  ', '-' * 100, '[%d]' % linenum, '\n   TEXT:', line, end='')
-    
-        # m = testRE.search(line)
-        # if m:
-        #     print('** TEST-RE:', m.group(1))
 
-        # mm = testRE.finditer(line)
-        # for m in mm:
-        #   print('** TEST-RE:', m.group(1))
+        tags = html_tags_re.finditer(line)
+        for tag in tags:
+            if tag.group(1) != '/':
+                print('  ', 'OPENTAG:', tag.group(2))
+                if tag.group(3) != None and len(tag.group(3)) > 0:
+                    params = re.split(' ', tag.group(3))
+                    for param in params:
+                          print('  ', '  ', 'PARAM:', param)
+            else:
+                print('  ', 'CLOSETAG:', tag.group(2))
 
-        open_tags = html_open_tag_re.finditer(line)
-        for tag in open_tags:
-            tag.group(1)
-            # if tag.group().startswith('</'):
-            #   print('  ', 'CLOSETAG:', tag.group().replace('</','').replace('>',''))
-            # else:
-            #   tag_with_params = tag.group().replace('<','').replace('>','')
-            #   tag_params_list = tag_with_params.split()
-            #   print('  ', 'OPENTAG:', tag_params_list[0])
-            #   if len(tag_params_list) > 1:
-            #       for param in tag_params_list[1:]:
-            #           print('  ', '  ', 'PARAM:', param)
+        pair_tags = pair_tags_re.finditer(line)
+        for pair_tag in pair_tags:
+            print('  ', 'PAIR[%s]:' % pair_tag.group(1), pair_tag.group(2))
+
+        urls = url_re.finditer(line)
+        for url in urls:
+            print('  ', 'URL:', url.group(2))
+
+
+print('  ', '=' * 100)
+with open('RGX_DATA.html') as infs: 
+    linenum = 0
+    for line in infs:
+        linenum += 1
+        if line.strip() == '':
+            continue
+        # print('  ', '-' * 100, '[%d]' % linenum, '\n   TEXT:', line, end='')
+
+        replaced_line = re.sub(r'<([/]?)([A-Za-z0-9]+)[ ]*(.*?)>', '', line, flags=re.I).rstrip('\n')
+        if len(replaced_line.rstrip()) > 0:
+            print('  ', 'STRIPPED[%d]:' % len(replaced_line), replaced_line)
+
+print('  ', '=' * 100)
+with open('RGX_DATA.html') as infs: 
+    text = ''
+    for line in infs:
+        if line.strip() == '':
+            continue
+        text += line
+
+    replaced_text = re.sub(r'<([/]?)([A-Za-z0-9]+)[ ]*(.*?)>', '', text, flags=re.I|re.M|re.S)
+    replaced_text = re.sub(r'[\n]+', '\n', replaced_text,flags=re.I|re.M|re.S)
+    if len(replaced_text) > 0:
+        print('  ', 'STRIPPED[%d]:' % len(replaced_text), replaced_text)
+
 
 
             
